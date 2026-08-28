@@ -1,0 +1,12 @@
+{
+  "name": "http-head-presentation",
+  "version": "1.0.0",
+  "description": "Interactive HTTP HEAD Method Presentation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:php": "C:\\xampp\\php\\php.exe -S localhost:8000"
+  },
+  "keywords": ["http", "head", "presentation"],
+  "license": "MIT"
+}
