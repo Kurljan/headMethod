@@ -141,6 +141,8 @@ if (isset($_GET['action'])) {
     </div>
 </nav>
 
+<main id="presentation-deck">
+
 <!-- ═══════════════ HERO SECTION ═══════════════ -->
 <section class="hero" id="hero">
     <div class="hero-bg">
@@ -198,8 +200,7 @@ if (isset($_GET['action'])) {
         </div>
     </div>
     <div class="scroll-hint">
-        <span>Scroll to explore</span>
-        <div class="scroll-arrow"></div>
+        <span>Press Space or Right Arrow to advance</span>
     </div>
 </section>
 
@@ -718,6 +719,21 @@ response = requests.<span class="syn-fn">head</span>(url, <span class="syn-prop"
         </div>
     </div>
 </section>
+
+</main>
+
+<!-- ═══════════════ PRESENTATION CONTROLS ═══════════════ -->
+<div class="presentation-controls">
+    <button id="prevSlideBtn" class="control-btn" aria-label="Previous Slide" disabled>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="progress-bar-container">
+        <div id="deckProgressBar" class="deck-progress-bar"></div>
+    </div>
+    <button id="nextSlideBtn" class="control-btn" aria-label="Next Slide">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+</div>
 
 <!-- ═══════════════ FOOTER ═══════════════ -->
 <footer class="footer">

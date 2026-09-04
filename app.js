@@ -6,15 +6,19 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ─── NAV SCROLL & TOGGLE ───
-    const nav = document.getElementById('mainNav');
+    // ─── PRESENTATION SLIDE LOGIC ───
+    const slides = Array.from(document.querySelectorAll('.hero, .section'));
+    let currentSlide = 0;
+    const prevBtn = document.getElementById('prevSlideBtn');
+    const nextBtn = document.getElementById('nextSlideBtn');
+    const progressBar = document.getElementById('deckProgressBar');
+    const navLinkItems = document.querySelectorAll('.nav-link');
     const navToggle = document.getElementById('navToggle');
     const navLinks = document.getElementById('navLinks');
-    const navLinkItems = document.querySelectorAll('.nav-link');
 
-    window.addEventListener('scroll', () => {
-        nav.classList.toggle('scrolled', window.scrollY > 40);
-    });
+    // Force nav to scrolled state for aesthetics
+    const nav = document.getElementById('mainNav');
+    nav.classList.add('scrolled');
 
     navToggle.addEventListener('click', () => {
         navToggle.classList.toggle('open');
@@ -22,49 +26,80 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     navLinkItems.forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
             navToggle.classList.remove('open');
             navLinks.classList.remove('open');
+            const targetId = link.getAttribute('href').substring(1);
+            const targetIndex = slides.findIndex(s => s.id === targetId);
+            if (targetIndex !== -1) goToSlide(targetIndex);
         });
     });
 
-    // Active nav tracking
-    const sections = document.querySelectorAll('section[id]');
-    const observerNav = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                navLinkItems.forEach(l => l.classList.remove('active'));
-                const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
-                if (active) active.classList.add('active');
-            }
-        });
-    }, { threshold: 0.3, rootMargin: '-80px 0px -40% 0px' });
-    sections.forEach(s => observerNav.observe(s));
+    function goToSlide(index) {
+        if (index < 0 || index >= slides.length) return;
+        
+        slides[currentSlide].classList.remove('active-slide');
+        slides[index].classList.add('active-slide');
+        currentSlide = index;
 
-    // ─── SCROLL ANIMATIONS ───
-    const appearElements = document.querySelectorAll('.appear');
-    const observerAppear = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
-        });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    appearElements.forEach(el => observerAppear.observe(el));
+        // Reset scroll position of the new slide
+        slides[index].scrollTop = 0;
 
-    // ─── STAT COUNTER ANIMATION ───
-    const statNums = document.querySelectorAll('.stat-num[data-count]');
-    const observerStat = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const el = entry.target;
-                const target = parseInt(el.dataset.count);
-                animateCounter(el, target, 1200);
-                observerStat.unobserve(el);
-            }
+        // Update Nav
+        navLinkItems.forEach(l => l.classList.remove('active'));
+        const activeLink = document.querySelector(`.nav-link[href="#${slides[currentSlide].id}"]`);
+        if (activeLink) activeLink.classList.add('active');
+
+        // Update Progress & Controls
+        if (progressBar) {
+            progressBar.style.width = ((currentSlide) / (slides.length - 1)) * 100 + '%';
+        }
+        if (prevBtn) prevBtn.disabled = currentSlide === 0;
+        if (nextBtn) nextBtn.disabled = currentSlide === slides.length - 1;
+
+        // Trigger animations for the new slide
+        triggerSlideAnimations(slides[currentSlide]);
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            e.preventDefault();
+            goToSlide(currentSlide + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            goToSlide(currentSlide - 1);
+        }
+    });
+
+    function triggerSlideAnimations(slide) {
+        // Trigger appear elements
+        const appearElements = slide.querySelectorAll('.appear:not(.visible)');
+        appearElements.forEach((el, i) => {
+            setTimeout(() => {
+                el.classList.add('visible');
+            }, i * 150);
         });
-    }, { threshold: 0.5 });
-    statNums.forEach(el => observerStat.observe(el));
+
+        // Trigger stats
+        const statNums = slide.querySelectorAll('.stat-num[data-count]:not(.counted)');
+        statNums.forEach(el => {
+            const target = parseInt(el.dataset.count);
+            animateCounter(el, target, 1200);
+            el.classList.add('counted');
+        });
+
+        // Trigger terminal
+        if (slide.id === 'hero' && !window.terminalTriggered) {
+            window.terminalTriggered = true;
+            startTerminalAnimation();
+        }
+    }
 
     function animateCounter(el, target, duration) {
         const start = performance.now();
@@ -143,8 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ─── HERO TERMINAL ANIMATION ───
-    const terminal = document.getElementById('typingTerminal');
-    if (terminal) {
+    function startTerminalAnimation() {
+        const terminal = document.getElementById('typingTerminal');
+        if (!terminal) return;
         const lines = [
             { text: '$ curl -I https://example.com/resource', cls: 'cmd' },
             { text: '', cls: '' },
@@ -525,15 +561,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderQuiz();
 
-    // ─── SMOOTH SCROLL for hero buttons ───
+    // ─── BUTTONS & INITIALIZATION ───
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', (e) => {
-            const target = document.querySelector(link.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (!link.classList.contains('nav-link')) {
+                const targetId = link.getAttribute('href').substring(1);
+                // We use our existing slides array defined at the top
+                if (typeof slides !== 'undefined') {
+                    const targetIndex = slides.findIndex(s => s.id === targetId);
+                    if (targetIndex !== -1) {
+                        e.preventDefault();
+                        goToSlide(targetIndex);
+                    }
+                }
             }
         });
     });
+
+    // Initialize first slide
+    if (typeof goToSlide === 'function') {
+        goToSlide(0);
+    }
 
 });
